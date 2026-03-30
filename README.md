@@ -25,5 +25,3 @@ Form → Fetch Website → Clean Text → Chunk → Summarize → Combine → Go
 2. Add API credentials (Groq + Google)
 3. Run workflow
 
-## 📸 Screenshots
-(Add images here)
