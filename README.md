@@ -25,3 +25,11 @@ Form → Fetch Website → Clean Text → Chunk → Summarize → Combine → Go
 2. Add API credentials (Groq + Google)
 3. Run workflow
 
+👨‍💻 Author
+Sai Vikas
+
+GitHub: https://github.com/saivikas499
+LinkedIn: https://linkedin.com/in/saivikasbolloju
+
+⭐ If you like this project
+Give it a star ⭐ and feel free to contribute!
