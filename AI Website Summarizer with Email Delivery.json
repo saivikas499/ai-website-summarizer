@@ -1,0 +1,448 @@
+{
+  "name": "AI Website Summarizer with Email Delivery",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "={{ $json['Website URL'] }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "n8n-workflow/1.0 (Website Summarizer Bot)"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e0e56ad1-cdee-4e2b-a7d2-538338e026c0",
+      "name": "Fetch Website Content",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -32,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "folderId": "1okCFrOeJzihBUoTh-w18Ubca8lCBOQDH",
+        "title": "={{ $('Website Summary Form').item.json['Website URL'] }} "
+      },
+      "id": "ea89a54b-4bcc-4c4a-af7b-ad35ab6ec289",
+      "name": "Create Google Doc",
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        512,
+        544
+      ],
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "WQqDiHzqc4p2lMpD",
+          "name": "Google Docs OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Website Summary Form').item.json['Your Email Address'] }}",
+        "subject": "=Your Website Summary - {{ $('Website Summary Form').item.json['Website URL'] }}",
+        "message": "=<h2>Your Website Summary is Ready!</h2>\n\n<p>We've analyzed the content from <strong>{{ $('Website Summary Form').item.json['Website URL'] }}</strong> and created a comprehensive summary for you.</p>\n\n<p><a href=\"https://docs.google.com/document/d/{{ $('Create Google Doc').item.json.id }}/edit\" style=\"display: inline-block; padding: 12px 24px; background-color: #4285f4; color: white; text-decoration: none; border-radius: 4px; font-weight: bold;\">📄 View Summary Document</a></p>\n\n<p><a href=\"{{ $('Website Summary Form').item.json['Website URL'] }}\" style=\"display: inline-block; padding: 12px 24px; background-color: #34a853; color: white; text-decoration: none; border-radius: 4px; font-weight: bold; margin-top: 10px;\">🌐 View Original Website</a></p>\n\n<hr style=\"margin: 20px 0; border: none; border-top: 1px solid #ddd;\">\n\n<p style=\"color: #666; font-size: 14px;\">Generated on {{ $now.format('MMMM d, yyyy') }} at {{ $now.format('h:mm a') }}</p>\n\n<p style=\"color: #999; font-size: 12px;\">This document is shared with \"Anyone with the link\" for easy access.</p>",
+        "options": {}
+      },
+      "id": "6a6bb26f-7931-4d51-85ec-b4969a6ea28d",
+      "name": "Send Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1040,
+        544
+      ],
+      "webhookId": "6b6ad28c-201c-4f4d-a22c-e24deaa18e72",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "9wboY8O88H2zD59w",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "formTitle": "Website Summarizer",
+        "formDescription": "Enter a website URL to receive an AI-generated summary via email",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Website URL",
+              "placeholder": "https://example.com",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Your Email Address",
+              "fieldType": "email",
+              "placeholder": "your@email.com",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "appendAttribution": false,
+          "buttonLabel": "Generate Summary"
+        }
+      },
+      "id": "b89811bc-f079-4c34-b6d0-f37dd5c51108",
+      "name": "Website Summary Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        -256,
+        304
+      ],
+      "webhookId": "483b3329-eef4-411a-a03b-c69bacb6b79a"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chunk }}",
+        "options": {
+          "systemMessage": "Summarize the following text chunk clearly and concisely.\n\nFocus on:\n- Key points\n- Important insights\n- Avoid repetition\n\nText:\n{{$json.chunk}}"
+        }
+      },
+      "id": "e9d7ba59-001a-43e6-81b4-0a2687b49619",
+      "name": "Summarize Content",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -256,
+        544
+      ],
+      "retryOnFail": true,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "cleanText",
+              "cssSelector": "body"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9cbeb971-b02e-4b7a-9229-a7fa78898552",
+      "name": "Extract Clean Text",
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        192,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "id": "2190ee9c-9e16-4496-9df0-780a94243789",
+      "name": "Groq Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -208,
+        768
+      ],
+      "credentials": {
+        "groqApi": {
+          "id": "FdPonHbyFGoo0cXF",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $('Create Google Doc').item.json.id }}",
+          "mode": "id"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "writer",
+            "type": "anyone"
+          }
+        },
+        "options": {}
+      },
+      "id": "5dc94004-59bd-4521-809d-14322d1d39d1",
+      "name": "Share Google Doc",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        864,
+        544
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "aTRxZbOl9VuGzduQ",
+          "name": "Google Drive OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentURL": "={{ $json.id }}",
+        "actionsUi": {
+          "actionFields": [
+            {
+              "action": "insert",
+              "text": "={{ $('Summarize Content1').item.json.output }}"
+            }
+          ]
+        }
+      },
+      "id": "b06cbda2-5ed3-47ee-a754-4e681821c785",
+      "name": "Add Content to Doc",
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        688,
+        544
+      ],
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "WQqDiHzqc4p2lMpD",
+          "name": "Google Docs OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Ensure input exists\nlet text = $json.cleanText || \"\";\nif (text.length === 0) {\n  return [{\n    json: {\n      chunk: \"No content available\"\n    }\n  }];\n}\nif (text.length > 60000) {\n  text = text.slice(0, 60000);\n}\nif (!text || typeof text !== \"string\") {\n  throw new Error(\"cleanText is missing or not a string\");\n}\n\nconst maxChunks = 5;\nconst chunkSize = 12000;\n\nlet chunks = [];\nlet i = 0;\n\nwhile (i < text.length && chunks.length < maxChunks) {\n  let chunk = text.slice(i, i + chunkSize);\n\n  // Try to end at last full stop for cleaner split\n  const lastPeriod = chunk.lastIndexOf(\".\");\n  if (lastPeriod > 5000) {\n    chunk = chunk.slice(0, lastPeriod + 1);\n  }\n\n  chunks.push(chunk);\n  i += chunk.length;\n}\n\n// Return in correct n8n format\nreturn chunks.map(c => ({\n  json: {\n    chunk: c\n  }\n}));"
+      },
+      "id": "518c2ab1-a890-495d-8734-e0b287730e37",
+      "name": "Chunk Text",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "fianlChunk",
+        "options": {}
+      },
+      "id": "6d3963a4-99e6-4199-bd4b-ced289457e8a",
+      "name": "Combine Chunks",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        32,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.fianlChunk }}",
+        "options": {
+          "systemMessage": "Combine the following summaries into a final structured summary:\n\n"
+        }
+      },
+      "id": "350e6d4c-3bf3-4cc9-aa37-e9a727e789b6",
+      "name": "Summarize Content1",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        192,
+        544
+      ],
+      "retryOnFail": true,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "id": "3776c3ed-caa8-4abc-9177-cbd28a24b3e4",
+      "name": "Groq Chat Model1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        208,
+        736
+      ],
+      "credentials": {
+        "groqApi": {
+          "id": "FdPonHbyFGoo0cXF",
+          "name": "Groq account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Fetch Website Content": {
+      "main": [
+        [
+          {
+            "node": "Extract Clean Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Google Doc": {
+      "main": [
+        [
+          {
+            "node": "Add Content to Doc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Website Summary Form": {
+      "main": [
+        [
+          {
+            "node": "Fetch Website Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email": {
+      "main": [
+        []
+      ]
+    },
+    "Summarize Content": {
+      "main": [
+        [
+          {
+            "node": "Combine Chunks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Clean Text": {
+      "main": [
+        [
+          {
+            "node": "Chunk Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Summarize Content",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Share Google Doc": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Content to Doc": {
+      "main": [
+        [
+          {
+            "node": "Share Google Doc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chunk Text": {
+      "main": [
+        [
+          {
+            "node": "Summarize Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Chunks": {
+      "main": [
+        [
+          {
+            "node": "Summarize Content1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Summarize Content1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize Content1": {
+      "main": [
+        [
+          {
+            "node": "Create Google Doc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": -1,
+    "availableInMCP": false
+  },
+  "versionId": "5475bd1c-f14d-416f-b592-bfb82d38cab0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "7eed0bfcd76ebf68104cc3b431d9d9a66ac2622ecc15cfafa664db0276f27fee"
+  },
+  "id": "bH6gpGHlqgv5YxRu",
+  "tags": []
+}
